@@ -285,6 +285,72 @@ footer {
   opacity:.75;
   padding-top: 8px;
 }
+
+/* ===== شريط التثبيت ===== */
+.install-banner {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  display: none;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: 1px solid var(--card-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 -8px 30px rgba(0,0,0,0.15);
+  animation: slideUp .35s cubic-bezier(.2,.7,.3,1);
+}
+.install-banner.show { display: block; }
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.install-inner {
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.install-ico {
+  width: 44px; height: 44px; flex-shrink: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), #06B6D4);
+  display: grid; place-items: center;
+  font-size: 22px;
+  box-shadow: 0 4px 12px rgba(14,124,240,0.35);
+}
+.install-txt { flex: 1; min-width: 0; }
+.install-txt .t1 { font-size: 13.5px; font-weight: 800; }
+.install-txt .t2 { font-size: 11.5px; color: var(--text-dim); font-weight: 500; line-height: 1.5; }
+.install-btn {
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), #06B6D4);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .15s;
+  white-space: nowrap;
+}
+.install-btn:active { transform: scale(0.94); }
+.install-close {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  display: grid; place-items: center;
+}
+.install-close:active { transform: scale(0.9); }
 </style>
 </head>
 <body>
@@ -372,6 +438,19 @@ footer {
   </div>
 
   <footer>يُحسب موقعك محلياً على جهازك — لا يُرسل لأي سيرفر 🔒</footer>
+</div>
+
+<!-- شريط التثبيت -->
+<div class="install-banner" id="installBanner">
+  <div class="install-inner">
+    <div class="install-ico">🛰️</div>
+    <div class="install-txt">
+      <div class="t1" id="installTitle">ثبّت عداد السرعة</div>
+      <div class="t2" id="installDesc">يعمل كتطبيق مستقل على جهازك</div>
+    </div>
+    <button class="install-btn" id="installBtn">تثبيت</button>
+    <button class="install-close" id="installClose" aria-label="إغلاق">✕</button>
+  </div>
 </div>
 
 <script>
@@ -585,6 +664,96 @@ function checkAlert(kmh) {
 // ====== سيرفر الخدمة (كاش للعمل بدون إنترنت) ======
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ====== شريط التثبيت (PWA) ======
+const INSTALL_KEY = 'speedo-install-hidden';
+const banner = document.getElementById('installBanner');
+const installBtn = document.getElementById('installBtn');
+const installClose = document.getElementById('installClose');
+let deferredPrompt = null;
+
+function isInstalled() {
+  // يعمل كتطبيق مستقل؟ إذن مثبّت — لا نعرض الشريط أبداً
+  const display = window.matchMedia && (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.matchMedia('(display-mode: fullscreen)').matches ||
+    window.matchMedia('(display-mode: minimal-ui)').matches
+  );
+  return !!(display || window.navigator.standalone === true);
+}
+function isIOS() {
+  return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS
+}
+function isAndroid() {
+  return /android/i.test(navigator.userAgent);
+}
+function showBanner() {
+  if (isInstalled()) return;
+  let hidden = false;
+  try { hidden = localStorage.getItem(INSTALL_KEY) === '1'; } catch(e){}
+  if (hidden) return;
+  banner.classList.add('show');
+}
+function hideBanner() {
+  banner.classList.remove('show');
+}
+installClose.addEventListener('click', () => {
+  hideBanner();
+  try { localStorage.setItem(INSTALL_KEY, '1'); } catch(e){}
+});
+
+if (!isInstalled()) {
+  if (isIOS()) {
+    // آيفون: لا يوجد حدث تثبيت — نعرض إرشادات
+    document.getElementById('installTitle').textContent = 'ثبّت عداد السرعة';
+    document.getElementById('installDesc').textContent = 'زر المشاركة ← "إضافة إلى الشاشة الرئيسية"';
+    installBtn.textContent = 'كيف؟';
+    installBtn.addEventListener('click', () => {
+      document.getElementById('installDesc').textContent = 'اضغط زر المشاركة ⬆️ بالأسفل ← "إضافة إلى الشاشة الرئيسية" ← إضافة';
+    });
+    // نعرضه بعد ثانيتين حتى لا يزعج أول ما تفتح
+    setTimeout(showBanner, 2000);
+  } else if (isAndroid()) {
+    // أندرويد: ننتظر حدث التثبيت الرسمي
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('installTitle').textContent = 'ثبّت عداد السرعة';
+      document.getElementById('installDesc').textContent = 'يعمل كتطبيق مستقل ويبقى على جهازك';
+      installBtn.textContent = '📲 تثبيت';
+      showBanner();
+    });
+    installBtn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          hideBanner();
+          try { localStorage.setItem(INSTALL_KEY, '1'); } catch(e){}
+        }
+        deferredPrompt = null;
+      }
+    });
+    // إذا لم يصل الحدث خلال 10 ثوانٍ (متصفح غير داعم) — نعرض إرشادات يدوية
+    setTimeout(() => {
+      if (!deferredPrompt && !isInstalled()) {
+        document.getElementById('installTitle').textContent = 'ثبّت عداد السرعة';
+        document.getElementById('installDesc').textContent = 'القائمة ⋮ ← "تثبيت التطبيق" أو "إضافة إلى الشاشة الرئيسية"';
+        installBtn.textContent = 'فهمت';
+        installBtn.onclick = hideBanner;
+        showBanner();
+      }
+    }, 10000);
+  } else {
+    // متصفحات أخرى (حاسوب): إرشادات عامة
+    document.getElementById('installTitle').textContent = 'ثبّت عداد السرعة';
+    document.getElementById('installDesc').textContent = 'من شريط العنوان ← أيقونة التثبيت';
+    installBtn.textContent = 'فهمت';
+    installBtn.onclick = hideBanner;
+    showBanner();
+  }
 }
 </script>
 </body>
