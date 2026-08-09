@@ -582,13 +582,38 @@ startGPS();
 
 // ====== إبقاء الشاشة مضيئة أثناء القيادة ======
 let wakeLock = null;
+let wakeLockSupported = 'wakeLock' in navigator;
+
 async function requestWakeLock() {
-  try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e){}
+  if (!wakeLockSupported) return;
+  if (document.visibilityState !== 'visible') return;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => {
+      // انطلقت لأي سبب — نعيد طلبها فوراً إذا الصفحة نشطة
+      wakeLock = null;
+      if (document.visibilityState === 'visible') setTimeout(requestWakeLock, 300);
+    });
+  } catch(e) {}
 }
+
+// عند التحميل + عند الرجوع للصفحة
+requestWakeLock();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') requestWakeLock();
 });
-requestWakeLock();
+
+// إعادة الطلب عند أي تفاعل (لمسة/نقرة) — المتصفحات تسقطها أحياناً
+['touchstart', 'pointerdown', 'click'].forEach((evt) => {
+  document.addEventListener(evt, () => {
+    if (document.visibilityState === 'visible' && (!wakeLock || wakeLock.released)) requestWakeLock();
+  }, { passive: true });
+});
+
+// شبكة أمان: فحص دوري كل 15 ثانية
+setInterval(() => {
+  if (document.visibilityState === 'visible' && (!wakeLock || wakeLock.released)) requestWakeLock();
+}, 15000);
 
 // ====== التنبيه الصوتي ======
 const ALERT_KEY = 'speedo-alert';
