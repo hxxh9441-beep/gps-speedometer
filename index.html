@@ -59,6 +59,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  justify-content: safe center;
 }
 
 /* ===== الرأس ===== */
@@ -100,43 +101,46 @@ header {
   box-shadow: var(--glass-shadow);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  padding: 18px 12px 14px;
+  padding: 14px;
+  width: min(448px, 100%);
+  aspect-ratio: 448 / 400;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.gauge-wrap { position: relative; width: min(78vw, 320px); height: min(78vw, 320px); }
-.gauge-wrap svg { width: 100%; height: 100%; display:block; transform: rotate(-90deg); }
-.gauge-track { fill:none; stroke: var(--arc-track); stroke-width: 16; stroke-linecap: round; }
+.gauge-wrap { position: relative; width: 100%; aspect-ratio: 418 / 370; }
+.gauge-wrap svg { width: 100%; height: 100%; display:block; }
+.gauge-track { fill:none; stroke: var(--arc-track); stroke-width: 20; stroke-linecap: round; }
 .gauge-arc {
   fill:none;
   stroke: url(#gaugeGrad);
-  stroke-width: 16;
+  stroke-width: 20;
   stroke-linecap: round;
   transition: stroke-dashoffset 0.45s cubic-bezier(.2,.7,.3,1);
-  filter: drop-shadow(0 0 8px rgba(14,124,240,0.35));
+  filter: drop-shadow(0 0 10px rgba(14,124,240,0.4));
 }
 .gauge-center {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
+  padding-top: 41%;
 }
 #speedVal {
-  font-size: clamp(64px, 22vw, 96px);
+  font-size: clamp(64px, 21vw, 100px);
   font-weight: 800;
   line-height: 1;
   font-variant-numeric: tabular-nums;
   letter-spacing: -2px;
 }
-#speedUnit { font-size: 17px; font-weight: 700; color: var(--text-dim); margin-top: 4px; }
+#speedUnit { font-size: 20px; font-weight: 700; color: var(--text-dim); margin-top: 6px; }
 #speedStatus {
-  margin-top: 10px;
-  font-size: 12.5px;
+  margin-top: 12px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-dim);
   display: flex; align-items: center; gap: 6px;
 }
-.dot { width:8px; height:8px; border-radius:50%; background: var(--text-dim); opacity:.25; }
+.dot { width:10px; height:10px; border-radius:50%; background: var(--text-dim); opacity:.25; }
 .dot.on { opacity:1; background: #22C55E; box-shadow: 0 0 6px #22C55E; }
 .dot.warn { opacity:1; background: #F59E0B; box-shadow: 0 0 6px #F59E0B; }
 
@@ -278,7 +282,6 @@ header {
 .switch input:checked + .slider::before { transform: translateX(22px); }
 
 footer {
-  margin-top:auto;
   text-align:center;
   font-size: 10.5px;
   color: var(--text-dim);
@@ -370,18 +373,19 @@ footer {
   <!-- العداد -->
   <div class="gauge-card">
     <div class="gauge-wrap">
-      <svg viewBox="0 0 200 200">
+      <svg viewBox="0 0 200 177.03">
         <defs>
-          <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stop-color="#22C55E"/>
             <stop offset="45%" stop-color="#F59E0B"/>
             <stop offset="75%" stop-color="#F97316"/>
             <stop offset="100%" stop-color="#EF4444"/>
           </linearGradient>
         </defs>
-        <circle class="gauge-track" cx="100" cy="100" r="86"/>
-        <circle class="gauge-arc" id="gaugeArc" cx="100" cy="100" r="86"
-                stroke-dasharray="540.35" stroke-dashoffset="540.35"/>
+        <!-- قوس العداد: 240° نصف قطر 90 — متمركز عمودياً في البطاقة 448×400 -->
+        <path class="gauge-track" d="M 22.1,156.02 A 90 90 0 1 1 177.9,156.02"/>
+        <path class="gauge-arc" id="gaugeArc" d="M 22.1,156.02 A 90 90 0 1 1 177.9,156.02"
+                stroke-dasharray="376.99" stroke-dashoffset="376.99"/>
       </svg>
       <div class="gauge-center">
         <div id="speedVal">—</div>
@@ -462,7 +466,7 @@ let timerInt = null;
 let lastPos = null;
 let lastTime = null;
 const MAX_SCALE = 220; // أقصى تدريج للعداد
-const ARC_C = 540.35;  // محيط القوس
+const ARC_C = 376.99;  // طول القوس 240° (نصف قطر 90)
 
 // ====== الثيم (نهاري/ليلي) ======
 function applyTheme(t) {
