@@ -504,7 +504,8 @@ function layoutGauge() {
   const vbH = 200 * H / W;             // ارتفاع viewBox بنفس نسبة الحاوية
   const margin = 10;                   // هامش علوي = نصف سمك الخط (20/2)
   const R = 90;                        // نصف القطر ثابت 90
-  const cy = margin + R;
+  // مركز القوس: نفس نسبة الكمبيوتر (56%) — ما يعلق بالأعلى على الجوال
+  const cy = Math.max(margin + R, 0.56 * vbH);
   const xOff = R * Math.cos(Math.PI / 6);
   const yEnd = cy + R * 0.5;
   const d = 'M ' + (100 - xOff).toFixed(2) + ',' + yEnd.toFixed(2) +
