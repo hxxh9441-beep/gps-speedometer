@@ -1,5 +1,5 @@
 /* سيرفر الخدمة — كاش للتطبيق يعمل بدون إنترنت */
-const CACHE = 'speedo-v23';
+const CACHE = 'speedo-v24';
 const ASSETS = [
   './',
   './index.html',
