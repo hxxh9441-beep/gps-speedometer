@@ -54,7 +54,8 @@ body {
 .app {
   max-width: 480px;
   margin: 0 auto;
-  min-height: 100dvh;
+  min-height: 100vh;
+  min-height: 100svh; /* ثابت — لا يتغير مع شريط المتصفح (يمنع تمدد البطاقة) */
   padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
